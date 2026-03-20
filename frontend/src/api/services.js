@@ -18,6 +18,7 @@ export const bookingApi = {
   create: (payload) => api.post('/bookings', payload),
   byUser: (userId) => api.get(`/bookings/user/${userId}`),
   approvalQueue: () => api.get('/bookings/organizer/queue'),
+  managed: () => api.get('/bookings/management'),
   confirm: (id) => api.patch(`/bookings/${id}/confirm`),
   reject: (id) => api.patch(`/bookings/${id}/reject`),
   cancel: (id) => api.patch(`/bookings/${id}/cancel`)

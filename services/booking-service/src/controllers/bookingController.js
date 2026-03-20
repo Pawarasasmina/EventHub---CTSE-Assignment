@@ -125,6 +125,17 @@ const getApprovalQueue = async (req, res) => {
   return sendSuccess(res, 200, 'Approval queue retrieved', bookings);
 };
 
+const getManagedBookings = async (req, res) => {
+  if (!['organizer', 'admin'].includes(req.user.role)) {
+    return res.status(403).json({ success: false, message: 'Only organizers or admins can view managed bookings' });
+  }
+
+  const query = req.user.role === 'admin' ? {} : { organizerId: req.user.id };
+  const bookings = await Booking.find(query).sort({ createdAt: -1 });
+
+  return sendSuccess(res, 200, 'Managed bookings retrieved', bookings);
+};
+
 const getBookingById = async (req, res) => {
   const booking = await getBookingOr404(req.params.id);
 
@@ -234,6 +245,7 @@ module.exports = {
   createBooking,
   getBookingsByUser,
   getApprovalQueue,
+  getManagedBookings,
   getBookingById,
   confirmBooking,
   rejectBooking,

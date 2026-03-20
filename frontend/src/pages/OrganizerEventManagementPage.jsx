@@ -19,10 +19,12 @@ const OrganizerEventManagementPage = () => {
   const { user } = useAuth();
   const [events, setEvents] = useState([]);
   const [approvals, setApprovals] = useState([]);
+  const [managedBookings, setManagedBookings] = useState([]);
   const [form, setForm] = useState(initialForm);
   const [editingId, setEditingId] = useState('');
   const [loading, setLoading] = useState(true);
   const [queueLoading, setQueueLoading] = useState(true);
+  const [managedLoading, setManagedLoading] = useState(true);
   const [error, setError] = useState('');
 
   const fetchEvents = async () => {
@@ -49,9 +51,22 @@ const OrganizerEventManagementPage = () => {
     }
   };
 
+  const fetchManagedBookings = async () => {
+    try {
+      setManagedLoading(true);
+      const response = await bookingApi.managed();
+      setManagedBookings(response.data.data);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to load managed bookings');
+    } finally {
+      setManagedLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchEvents();
     fetchApprovals();
+    fetchManagedBookings();
   }, []);
 
   const myEvents = useMemo(() => events.filter((event) => user.role === 'admin' || event.organizerId === user.id), [events, user]);
@@ -59,6 +74,7 @@ const OrganizerEventManagementPage = () => {
   const refreshData = () => {
     fetchEvents();
     fetchApprovals();
+    fetchManagedBookings();
   };
 
   const handleSubmit = async (e) => {
@@ -185,6 +201,50 @@ const OrganizerEventManagementPage = () => {
                   <button type="button" className="button" onClick={() => handleApprove(booking._id)}>Confirm</button>
                   <button type="button" className="button danger-button" onClick={() => handleReject(booking._id)}>Reject</button>
                 </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="page-stack">
+        <div className="section-heading">
+          <div>
+            <span className="section-tag">Booking oversight</span>
+            <h2>{user.role === 'admin' ? 'All event bookings' : 'Bookings for your events'}</h2>
+          </div>
+          <p>{user.role === 'admin' ? 'Admin can monitor bookings across the full platform.' : 'Organizers can monitor every booking tied to their own published events.'}</p>
+        </div>
+        {managedLoading ? <Loader text="Loading managed bookings..." /> : (
+          <div className="grid">
+            {managedBookings.map((booking) => (
+              <article className="event-card event-card--dashboard" key={booking._id}>
+                <div className="event-card__eyebrow">
+                  <span className={`pill ${booking.status === 'confirmed' ? 'pill--soft' : booking.status === 'pending' ? 'pill--soft' : 'pill--muted'}`}>{booking.status}</span>
+                  <span className="event-card__date">{new Date(booking.createdAt).toLocaleDateString()}</span>
+                </div>
+                <div className="event-card__body">
+                  <h3>{booking.eventTitle}</h3>
+                  <p>{booking.eventVenue} • {new Date(booking.eventDate).toLocaleString()}</p>
+                </div>
+                <dl className="event-card__facts">
+                  <div>
+                    <dt>Customer ID</dt>
+                    <dd>{booking.userId}</dd>
+                  </div>
+                  <div>
+                    <dt>Tickets</dt>
+                    <dd>{booking.ticketCount}</dd>
+                  </div>
+                  <div>
+                    <dt>Total</dt>
+                    <dd>${booking.totalAmount}</dd>
+                  </div>
+                  <div>
+                    <dt>Booking ID</dt>
+                    <dd>{booking._id.slice(-6)}</dd>
+                  </div>
+                </dl>
               </article>
             ))}
           </div>
