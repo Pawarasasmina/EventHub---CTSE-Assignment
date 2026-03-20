@@ -1,0 +1,149 @@
+version: "3.9"
+
+services:
+  gateway:
+    build:
+      context: ./gateway
+    container_name: eventhub-gateway
+    ports:
+      - "5000:5000"
+    environment:
+      PORT: 5000
+      AUTH_SERVICE_URL: http://auth-service:5001
+      EVENT_SERVICE_URL: http://event-service:5002
+      BOOKING_SERVICE_URL: http://booking-service:5003
+      NOTIFICATION_SERVICE_URL: http://notification-service:5004
+    depends_on:
+      - auth-service
+      - event-service
+      - booking-service
+      - notification-service
+    networks:
+      - eventhub-network
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: eventhub-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_BASE_URL: http://localhost:5000
+    depends_on:
+      - gateway
+    networks:
+      - eventhub-network
+
+  auth-service:
+    build:
+      context: ./services/auth-service
+    container_name: eventhub-auth-service
+    ports:
+      - "5001:5001"
+    environment:
+      PORT: 5001
+      MONGO_URI: mongodb://mongo-auth:27017/auth_db
+      JWT_SECRET: supersecretjwt
+    depends_on:
+      - mongo-auth
+    networks:
+      - eventhub-network
+
+  event-service:
+    build:
+      context: ./services/event-service
+    container_name: eventhub-event-service
+    ports:
+      - "5002:5002"
+    environment:
+      PORT: 5002
+      MONGO_URI: mongodb://mongo-event:27017/event_db
+      JWT_SECRET: supersecretjwt
+    depends_on:
+      - mongo-event
+    networks:
+      - eventhub-network
+
+  booking-service:
+    build:
+      context: ./services/booking-service
+    container_name: eventhub-booking-service
+    ports:
+      - "5003:5003"
+    environment:
+      PORT: 5003
+      MONGO_URI: mongodb://mongo-booking:27017/booking_db
+      JWT_SECRET: supersecretjwt
+      EVENT_SERVICE_URL: http://event-service:5002
+      NOTIFICATION_SERVICE_URL: http://notification-service:5004
+    depends_on:
+      - mongo-booking
+      - event-service
+      - notification-service
+    networks:
+      - eventhub-network
+
+  notification-service:
+    build:
+      context: ./services/notification-service
+    container_name: eventhub-notification-service
+    ports:
+      - "5004:5004"
+    environment:
+      PORT: 5004
+      MONGO_URI: mongodb://mongo-notification:27017/notification_db
+      JWT_SECRET: supersecretjwt
+    depends_on:
+      - mongo-notification
+    networks:
+      - eventhub-network
+
+  mongo-auth:
+    image: mongo:7
+    container_name: eventhub-mongo-auth
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-auth-data:/data/db
+    networks:
+      - eventhub-network
+
+  mongo-event:
+    image: mongo:7
+    container_name: eventhub-mongo-event
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongo-event-data:/data/db
+    networks:
+      - eventhub-network
+
+  mongo-booking:
+    image: mongo:7
+    container_name: eventhub-mongo-booking
+    ports:
+      - "27019:27017"
+    volumes:
+      - mongo-booking-data:/data/db
+    networks:
+      - eventhub-network
+
+  mongo-notification:
+    image: mongo:7
+    container_name: eventhub-mongo-notification
+    ports:
+      - "27020:27017"
+    volumes:
+      - mongo-notification-data:/data/db
+    networks:
+      - eventhub-network
+
+volumes:
+  mongo-auth-data:
+  mongo-event-data:
+  mongo-booking-data:
+  mongo-notification-data:
+
+networks:
+  eventhub-network:
+    driver: bridge
