@@ -1,36 +1,84 @@
 # EventHub
 
-EventHub is a MERN microservices event ticket booking platform built for a university assignment. It demonstrates synchronous REST-based microservice communication, Docker containerization, CI/CD, and secure role-based access.
+EventHub is a microservice-based event booking platform built for the SE4010 Cloud Computing assignment. It demonstrates a four-service architecture, API gateway routing, Docker containerization, CI, DevSecOps scanning with SonarCloud, GitHub Container Registry publishing, and deployment to Azure Container Apps.
 
-## Architecture Summary
+## What This Project Includes
 
-- `frontend`: React + Vite client for users, organizers, and admins
-- `gateway`: Express API gateway that exposes simple frontend routes and proxies requests to microservices
-- `services/auth-service`: registration, login, JWT identity, and user lookup
-- `services/event-service`: event catalog and organizer event management
-- `services/booking-service`: booking lifecycle and REST orchestration with event-service and notification-service
-- `services/notification-service`: mock notification storage and retrieval
-- MongoDB: one isolated database container per service
+- `frontend`: React + Vite client for customers, organizers, and admins
+- `gateway`: Express API gateway used by the frontend
+- `services/auth-service`: authentication, registration, JWT, user lookup
+- `services/event-service`: event creation, publishing, seat handling
+- `services/booking-service`: booking requests, approval workflow, booking management
+- `services/notification-service`: in-app notifications, role-based alerts, mark-as-read
+- MongoDB: one isolated database per microservice
 
-All backend services use CommonJS, JavaScript, REST over HTTP, JWT authentication, and their own independent MongoDB connection.
+## Assignment Fit
 
-## Folder Structure
+This project is structured so the four main microservices can be presented as four student-owned components:
 
-```text
-EventHub/
-+-- .github/workflows/
-+-- docker-compose.yml
-+-- sonar-project.properties
-+-- gateway/
-+-- frontend/
-+-- services/
-    +-- auth-service/
-    +-- booking-service/
-    +-- event-service/
-    +-- notification-service/
+- `auth-service`
+- `event-service`
+- `booking-service`
+- `notification-service`
+
+Each of them has at least one working integration point with another service in the system.
+
+## Key Integrations
+
+- `auth-service` -> supports `booking-service` internal admin lookup and platform authentication
+- `event-service` <-> `booking-service` for seat reservation and release
+- `booking-service` -> `notification-service` for customer, organizer, and admin booking alerts
+- `notification-service` -> serves role-specific notifications to frontend users
+
+## Current Booking Flow
+
+1. Customer submits a booking request.
+2. `booking-service` checks the event and reserves seats through `event-service`.
+3. Booking is created with `pending` status.
+4. Customer gets a pending notification.
+5. Organizer gets a booking request notification for their own event.
+6. Admin gets a global booking request notification.
+7. Organizer or admin confirms or rejects the request.
+8. Customer receives the final result notification.
+9. Booking cancellations also notify organizer and admin.
+
+## Local Development
+
+### Without Docker
+
+Copy `.env.example` to `.env` where needed:
+
+- `gateway`
+- `frontend`
+- `services/auth-service`
+- `services/event-service`
+- `services/booking-service`
+- `services/notification-service`
+
+Then install dependencies and start in this order:
+
+1. `services/auth-service`
+2. `services/event-service`
+3. `services/notification-service`
+4. `services/booking-service`
+5. `gateway`
+6. `frontend`
+
+### With Docker
+
+From the project root:
+
+```powershell
+docker compose up --build
 ```
 
-## Service Ports
+Frontend:
+- `http://localhost:5173`
+
+Gateway:
+- `http://localhost:5000`
+
+## Ports
 
 - Frontend: `5173`
 - Gateway: `5000`
@@ -39,86 +87,61 @@ EventHub/
 - Booking Service: `5003`
 - Notification Service: `5004`
 
-## Communication Flow
+## CI And DevSecOps
 
-- Frontend calls the gateway only
-- Gateway proxies requests to backend services
-- Booking service checks availability and reserves seats through event-service using REST
-- Booking service calls notification-service over REST after booking confirmation and cancellation
+This repository includes working GitHub Actions for:
 
-## Local Setup Without Docker
+- `CI`
+- `Publish Docker Images`
+- `SonarCloud`
+- `Deploy To Azure Container Apps`
 
-1. Make sure MongoDB is running locally.
-2. Copy each `.env.example` to `.env` in:
-   - `gateway`
-   - `frontend`
-   - `services/auth-service`
-   - `services/event-service`
-   - `services/booking-service`
-   - `services/notification-service`
-3. Install dependencies and start services in this order:
-   - `services/auth-service`
-   - `services/event-service`
-   - `services/notification-service`
-   - `services/booking-service`
-   - `gateway`
-   - `frontend`
+### Required GitHub Configuration
 
-## Docker Compose Setup
+Set this GitHub secret:
 
-1. Make sure Docker Desktop is running.
-2. From the project root run:
+- `SONAR_TOKEN`
 
-```powershell
-docker compose up --build
-```
+Update `sonar-project.properties` with your real:
 
-3. Open `http://localhost:5173`.
+- SonarCloud project key
+- SonarCloud organization
 
-## CI/CD And DevSecOps
+## Container Registry
 
-This repository includes GitHub Actions workflows for:
-- CI syntax checks for gateway and backend services
-- Frontend production build validation
-- Docker image publishing to GitHub Container Registry (`ghcr.io`)
-- SonarCloud static analysis scanning
-- Azure Container Apps deployment after image publishing succeeds
+Docker images are published to GitHub Container Registry (`ghcr.io`).
 
-### Required GitHub Secrets / Settings
+## Cloud Deployment
 
-Set these in your GitHub repository before enabling all workflows:
-- `SONAR_TOKEN`: SonarCloud user token
-- `AZURE_CREDENTIALS`: Azure service principal credentials JSON for deployment workflow
+The backend has been deployed to Azure Container Apps.
 
-Update [sonar-project.properties](/d:\.SLIIT\Y-4 S-2\EventHub\sonar-project.properties) with:
-- your SonarCloud project key
-- your SonarCloud organization
+There are now two supported deployment stories:
 
-The Docker publish workflow uses GitHub Container Registry and the built-in `GITHUB_TOKEN`, so no extra Docker registry secret is required for GHCR.
+- `University Azure`: manual Azure CLI deployment/update when tenant permissions block GitHub-to-Azure auth
+- `Personal Azure`: full GitHub-to-Azure CI/CD using `.github/workflows/deploy-azure.yml` and OIDC
 
-### Workflow Files
+If you want the clean personal-subscription setup, follow:
 
-- [.github/workflows/ci.yml](/d:\.SLIIT\Y-4 S-2\EventHub\.github\workflows\ci.yml)
-- [.github/workflows/docker-publish.yml](/d:\.SLIIT\Y-4 S-2\EventHub\.github\workflows\docker-publish.yml)
-- [.github/workflows/deploy-azure.yml](/d:\.SLIIT\Y-4 S-2\EventHub\.github\workflows\deploy-azure.yml)
-- [.github/workflows/sonarcloud.yml](/d:\.SLIIT\Y-4 S-2\EventHub\.github\workflows\sonarcloud.yml)
+- [Personal Azure CI/CD Setup](d:/%2E%20SLIIT/Y-4%20S-2/EventHub/docs/AZURE_PERSONAL_SETUP.md)
 
-## Test Flow
+This gives a stronger DevOps and cloud deployment story for the assignment.
 
-1. Register a customer account and an organizer account.
-2. Log in as organizer and create a published event.
-3. Log in as customer and browse the event list.
-4. Open event details and create a booking.
-5. Confirm the booking appears under My Bookings.
-6. Confirm a notification appears under My Notifications.
-7. Cancel the booking and verify seats are released and a cancellation notification is stored.
+## Swagger / API Docs
 
-## Notes
+Each service exposes Swagger at `/api-docs`.
 
-- Swagger docs are exposed per service at `/api-docs`.
-- The gateway exposes simplified frontend routes:
-  - `/auth/*`
-  - `/events/*`
-  - `/bookings/*`
-  - `/notifications/*`
-- The system uses REST-based service-to-service communication, which is sufficient for the assignment's inter-service integration requirement.
+## Recommended Reading
+
+- [Team Component Mapping](d:/%2E%20SLIIT/Y-4%20S-2/EventHub/docs/TEAM_COMPONENTS.md)
+- [Technical Reference](d:/%2E%20SLIIT/Y-4%20S-2/EventHub/docs/TECHNICAL_REFERENCE.md)
+- [Report Writing Guide](d:/%2E%20SLIIT/Y-4%20S-2/EventHub/docs/REPORT_GUIDE.md)
+- [Personal Azure CI/CD Setup](d:/%2E%20SLIIT/Y-4%20S-2/EventHub/docs/AZURE_PERSONAL_SETUP.md)
+
+## Final Notes
+
+Before final demo or submission:
+
+- verify latest GitHub Actions are green
+- rebuild/redeploy latest service changes
+- test customer, organizer, and admin flows
+- rotate any exposed secrets if needed

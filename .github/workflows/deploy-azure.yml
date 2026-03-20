@@ -1,0 +1,192 @@
+name: Deploy To Azure Container Apps
+
+on:
+  workflow_run:
+    workflows:
+      - Publish Docker Images
+    types:
+      - completed
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    env:
+      AZURE_CORE_OUTPUT: none
+      RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+      CONTAINERAPPS_ENVIRONMENT: ${{ vars.AZURE_CONTAINERAPPS_ENV }}
+      LOCATION: ${{ vars.AZURE_LOCATION }}
+      REGISTRY_SERVER: ghcr.io
+      REGISTRY_USERNAME: ${{ github.repository_owner }}
+      REGISTRY_PASSWORD: ${{ secrets.GHCR_PULL_TOKEN }}
+      AUTH_IMAGE: ghcr.io/${{ github.repository_owner }}/eventhub-auth-service:latest
+      EVENT_IMAGE: ghcr.io/${{ github.repository_owner }}/eventhub-event-service:latest
+      BOOKING_IMAGE: ghcr.io/${{ github.repository_owner }}/eventhub-booking-service:latest
+      NOTIFICATION_IMAGE: ghcr.io/${{ github.repository_owner }}/eventhub-notification-service:latest
+      GATEWAY_IMAGE: ghcr.io/${{ github.repository_owner }}/eventhub-gateway:latest
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      SERVICE_TO_SERVICE_SECRET: ${{ secrets.SERVICE_TO_SERVICE_SECRET }}
+      AUTH_MONGO_URI: ${{ secrets.AUTH_MONGO_URI }}
+      EVENT_MONGO_URI: ${{ secrets.EVENT_MONGO_URI }}
+      BOOKING_MONGO_URI: ${{ secrets.BOOKING_MONGO_URI }}
+      NOTIFICATION_MONGO_URI: ${{ secrets.NOTIFICATION_MONGO_URI }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to Azure with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Install Azure Container Apps extension
+        run: |
+          az extension add --name containerapp --upgrade --yes
+
+      - name: Validate deployment configuration
+        run: |
+          required_vars=(RESOURCE_GROUP CONTAINERAPPS_ENVIRONMENT LOCATION)
+          for item in "${required_vars[@]}"; do
+            if [ -z "${!item}" ]; then
+              echo "Missing repository variable: $item" >&2
+              exit 1
+            fi
+          done
+
+          required_secrets=(REGISTRY_PASSWORD JWT_SECRET SERVICE_TO_SERVICE_SECRET AUTH_MONGO_URI EVENT_MONGO_URI BOOKING_MONGO_URI NOTIFICATION_MONGO_URI)
+          for item in "${required_secrets[@]}"; do
+            if [ -z "${!item}" ]; then
+              echo "Missing repository secret: $item" >&2
+              exit 1
+            fi
+          done
+
+      - name: Ensure resource group exists
+        run: |
+          az group create --name "$RESOURCE_GROUP" --location "$LOCATION" --output none
+
+      - name: Ensure Container Apps environment exists
+        run: |
+          if ! az containerapp env show --name "$CONTAINERAPPS_ENVIRONMENT" --resource-group "$RESOURCE_GROUP" --output none 2>/dev/null; then
+            az containerapp env create \
+              --name "$CONTAINERAPPS_ENVIRONMENT" \
+              --resource-group "$RESOURCE_GROUP" \
+              --location "$LOCATION" \
+              --output none
+          fi
+
+      - name: Deploy services
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          create_or_update_app() {
+            local name="$1"
+            local image="$2"
+            local port="$3"
+            local ingress="$4"
+            shift 4
+            local env_args=("$@")
+
+            if az containerapp show --name "$name" --resource-group "$RESOURCE_GROUP" --output none 2>/dev/null; then
+              az containerapp registry set \
+                --name "$name" \
+                --resource-group "$RESOURCE_GROUP" \
+                --server "$REGISTRY_SERVER" \
+                --username "$REGISTRY_USERNAME" \
+                --password "$REGISTRY_PASSWORD" \
+                --output none
+
+              az containerapp update \
+                --name "$name" \
+                --resource-group "$RESOURCE_GROUP" \
+                --image "$image" \
+                --set-env-vars "${env_args[@]}" \
+                --output none
+            else
+              az containerapp create \
+                --name "$name" \
+                --resource-group "$RESOURCE_GROUP" \
+                --environment "$CONTAINERAPPS_ENVIRONMENT" \
+                --image "$image" \
+                --target-port "$port" \
+                --ingress "$ingress" \
+                --registry-server "$REGISTRY_SERVER" \
+                --registry-username "$REGISTRY_USERNAME" \
+                --registry-password "$REGISTRY_PASSWORD" \
+                --min-replicas 1 \
+                --env-vars "${env_args[@]}" \
+                --output none
+            fi
+          }
+
+          create_or_update_app \
+            "auth-service" \
+            "$AUTH_IMAGE" \
+            "5001" \
+            "internal" \
+            PORT=5001 \
+            MONGO_URI="$AUTH_MONGO_URI" \
+            JWT_SECRET="$JWT_SECRET" \
+            SERVICE_TO_SERVICE_SECRET="$SERVICE_TO_SERVICE_SECRET"
+
+          create_or_update_app \
+            "event-service" \
+            "$EVENT_IMAGE" \
+            "5002" \
+            "internal" \
+            PORT=5002 \
+            MONGO_URI="$EVENT_MONGO_URI" \
+            JWT_SECRET="$JWT_SECRET"
+
+          create_or_update_app \
+            "notification-service" \
+            "$NOTIFICATION_IMAGE" \
+            "5004" \
+            "internal" \
+            PORT=5004 \
+            MONGO_URI="$NOTIFICATION_MONGO_URI" \
+            JWT_SECRET="$JWT_SECRET" \
+            SERVICE_TO_SERVICE_SECRET="$SERVICE_TO_SERVICE_SECRET"
+
+          auth_fqdn="$(az containerapp show --name auth-service --resource-group "$RESOURCE_GROUP" --query properties.configuration.ingress.fqdn -o tsv)"
+          event_fqdn="$(az containerapp show --name event-service --resource-group "$RESOURCE_GROUP" --query properties.configuration.ingress.fqdn -o tsv)"
+          notification_fqdn="$(az containerapp show --name notification-service --resource-group "$RESOURCE_GROUP" --query properties.configuration.ingress.fqdn -o tsv)"
+
+          create_or_update_app \
+            "booking-service" \
+            "$BOOKING_IMAGE" \
+            "5003" \
+            "internal" \
+            PORT=5003 \
+            MONGO_URI="$BOOKING_MONGO_URI" \
+            JWT_SECRET="$JWT_SECRET" \
+            AUTH_SERVICE_URL="https://$auth_fqdn" \
+            EVENT_SERVICE_URL="https://$event_fqdn" \
+            NOTIFICATION_SERVICE_URL="https://$notification_fqdn" \
+            SERVICE_TO_SERVICE_SECRET="$SERVICE_TO_SERVICE_SECRET"
+
+          booking_fqdn="$(az containerapp show --name booking-service --resource-group "$RESOURCE_GROUP" --query properties.configuration.ingress.fqdn -o tsv)"
+
+          create_or_update_app \
+            "gateway" \
+            "$GATEWAY_IMAGE" \
+            "5000" \
+            "external" \
+            PORT=5000 \
+            AUTH_SERVICE_URL="https://$auth_fqdn" \
+            EVENT_SERVICE_URL="https://$event_fqdn" \
+            BOOKING_SERVICE_URL="https://$booking_fqdn" \
+            NOTIFICATION_SERVICE_URL="https://$notification_fqdn"
+
+      - name: Print deployed gateway URL
+        run: |
+          gateway_fqdn=$(az containerapp show --name gateway --resource-group "$RESOURCE_GROUP" --query properties.configuration.ingress.fqdn -o tsv)
+          echo "Gateway URL: https://$gateway_fqdn"
