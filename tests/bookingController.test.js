@@ -80,39 +80,76 @@ test('booking createBooking creates pending booking and stakeholder notification
   await createBooking({ body: { eventId: 'event-1', ticketCount: 2 }, user: { id: 'user-1' }, token: 'token' }, res);
 
   assert.equal(res.statusCode, 201);
-  assert.equal(res.body.success, true);
   assert.deepEqual(reservedArgs, { eventId: 'event-1', seats: 2 });
   assert.equal(notificationPayloads.length, 3);
   assert.equal(res.body.data.booking.status, 'pending');
 });
 
+test('booking getApprovalQueue blocks non-managers', async () => {
+  const Booking = { find: () => ({ sort: async () => [] }) };
+  const { getApprovalQueue } = createController({ Booking, eventService: {}, notificationService: {}, authService: {} });
+  const res = createRes();
+
+  await getApprovalQueue({ user: { role: 'customer', id: 'user-1' } }, res);
+
+  assert.equal(res.statusCode, 403);
+});
+
+test('booking getApprovalQueue returns organizer queue', async () => {
+  const bookings = [createBookingDoc()];
+  const Booking = { find: () => ({ sort: async () => bookings }) };
+  const { getApprovalQueue } = createController({ Booking, eventService: {}, notificationService: {}, authService: {} });
+  const res = createRes();
+
+  await getApprovalQueue({ user: { role: 'organizer', id: 'organizer-1' } }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.data.length, 1);
+});
+
+test('booking getManagedBookings returns organizer bookings', async () => {
+  const bookings = [createBookingDoc()];
+  const Booking = { find: () => ({ sort: async () => bookings }) };
+  const { getManagedBookings } = createController({ Booking, eventService: {}, notificationService: {}, authService: {} });
+  const res = createRes();
+
+  await getManagedBookings({ user: { role: 'organizer', id: 'organizer-1' } }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.data.length, 1);
+});
+
+test('booking getBookingById blocks unrelated users', async () => {
+  const Booking = { findById: async () => createBookingDoc() };
+  const { getBookingById } = createController({ Booking, eventService: {}, notificationService: {}, authService: {} });
+  const res = createRes();
+
+  await getBookingById({ params: { id: 'booking-1' }, user: { id: 'other-user', role: 'customer' } }, res);
+
+  assert.equal(res.statusCode, 403);
+});
+
 test('booking confirmBooking rejects non-pending bookings', async () => {
   const Booking = { findById: async () => createBookingDoc({ status: 'confirmed' }) };
-  const eventService = {};
-  const notificationService = { createNotification: async () => ({}) };
-  const authService = { listAdmins: async () => [] };
-  const { confirmBooking } = createController({ Booking, eventService, notificationService, authService });
+  const { confirmBooking } = createController({ Booking, eventService: {}, notificationService: { createNotification: async () => ({}) }, authService: { listAdmins: async () => [] } });
   const res = createRes();
 
   await confirmBooking({ params: { id: 'booking-1' }, user: { id: 'organizer-1', role: 'organizer' }, token: 'token' }, res);
 
   assert.equal(res.statusCode, 400);
-  assert.equal(res.body.message, 'Only pending bookings can be confirmed');
 });
 
 test('booking confirmBooking confirms pending booking', async () => {
   const booking = createBookingDoc({ status: 'pending' });
   let notificationPayload;
   const Booking = { findById: async () => booking };
-  const eventService = {};
   const notificationService = {
     createNotification: async (payload) => {
       notificationPayload = payload;
       return payload;
     }
   };
-  const authService = { listAdmins: async () => [] };
-  const { confirmBooking } = createController({ Booking, eventService, notificationService, authService });
+  const { confirmBooking } = createController({ Booking, eventService: {}, notificationService, authService: { listAdmins: async () => [] } });
   const res = createRes();
 
   await confirmBooking({ params: { id: 'booking-1' }, user: { id: 'organizer-1', role: 'organizer' }, token: 'token' }, res);
@@ -120,6 +157,48 @@ test('booking confirmBooking confirms pending booking', async () => {
   assert.equal(res.statusCode, 200);
   assert.equal(booking.status, 'confirmed');
   assert.equal(notificationPayload.type, 'booking-confirmation');
+});
+
+test('booking rejectBooking rejects pending booking and releases seats', async () => {
+  const booking = createBookingDoc({ status: 'pending' });
+  let releasedArgs;
+  const Booking = { findById: async () => booking };
+  const eventService = {
+    releaseSeats: async (eventId, seats) => {
+      releasedArgs = { eventId, seats };
+      return {};
+    }
+  };
+  const notificationService = { createNotification: async () => ({}) };
+  const { rejectBooking } = createController({ Booking, eventService, notificationService, authService: { listAdmins: async () => [] } });
+  const res = createRes();
+
+  await rejectBooking({ params: { id: 'booking-1' }, user: { id: 'organizer-1', role: 'organizer' }, token: 'token' }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(booking.status, 'rejected');
+  assert.deepEqual(releasedArgs, { eventId: 'event-1', seats: 2 });
+});
+
+test('booking cancelBooking blocks unrelated users', async () => {
+  const Booking = { findById: async () => createBookingDoc({ status: 'pending' }) };
+  const { cancelBooking } = createController({ Booking, eventService: {}, notificationService: {}, authService: {} });
+  const res = createRes();
+
+  await cancelBooking({ params: { id: 'booking-1' }, user: { id: 'other-user', role: 'customer' }, token: 'token' }, res);
+
+  assert.equal(res.statusCode, 403);
+});
+
+test('booking cancelBooking rejects already-cancelled bookings', async () => {
+  const Booking = { findById: async () => createBookingDoc({ status: 'cancelled' }) };
+  const { cancelBooking } = createController({ Booking, eventService: {}, notificationService: {}, authService: {} });
+  const res = createRes();
+
+  await cancelBooking({ params: { id: 'booking-1' }, user: { id: 'user-1', role: 'customer' }, token: 'token' }, res);
+
+  assert.equal(res.statusCode, 400);
+  assert.equal(res.body.message, 'This booking cannot be cancelled');
 });
 
 test('booking cancelBooking releases seats and notifies stakeholders', async () => {

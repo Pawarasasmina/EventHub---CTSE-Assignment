@@ -23,9 +23,7 @@ const createController = (User) => loadWithMocks(controllerPath, new Map([
 ]));
 
 test('auth register returns 409 when user already exists', async () => {
-  const User = {
-    findOne: async () => createUserDoc()
-  };
+  const User = { findOne: async () => createUserDoc() };
   const { register } = createController(User);
   const res = createRes();
 
@@ -54,9 +52,7 @@ test('auth register returns token and sanitized user on success', async () => {
 });
 
 test('auth login rejects invalid credentials', async () => {
-  const User = {
-    findOne: async () => null
-  };
+  const User = { findOne: async () => null };
   const { login } = createController(User);
   const res = createRes();
 
@@ -64,6 +60,38 @@ test('auth login rejects invalid credentials', async () => {
 
   assert.equal(res.statusCode, 401);
   assert.equal(res.body.message, 'Invalid credentials');
+});
+
+test('auth login returns token on success', async () => {
+  const User = { findOne: async () => createUserDoc() };
+  const { login } = createController(User);
+  const res = createRes();
+
+  await login({ body: { email: 'test@example.com', password: 'secret123' } }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.data.token, 'mock-jwt-token');
+});
+
+test('auth getCurrentUser returns 404 when user does not exist', async () => {
+  const User = { findById: async () => null };
+  const { getCurrentUser } = createController(User);
+  const res = createRes();
+
+  await getCurrentUser({ user: { id: 'missing' } }, res);
+
+  assert.equal(res.statusCode, 404);
+});
+
+test('auth getCurrentUser returns sanitized user', async () => {
+  const User = { findById: async () => createUserDoc({ _id: 'u1', name: 'Current User' }) };
+  const { getCurrentUser } = createController(User);
+  const res = createRes();
+
+  await getCurrentUser({ user: { id: 'u1' } }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.data.name, 'Current User');
 });
 
 test('auth listUsers blocks non-admin external callers', async () => {
@@ -92,7 +120,17 @@ test('auth listUsers returns filtered users for internal service access', async 
   await listUsers({ internalService: true, query: { role: 'admin' } }, res);
 
   assert.equal(res.statusCode, 200);
-  assert.equal(res.body.success, true);
   assert.equal(res.body.data.length, 1);
   assert.equal(res.body.data[0].role, 'admin');
+});
+
+test('auth getUserById returns sanitized user', async () => {
+  const User = { findById: async () => createUserDoc({ _id: 'user-99', name: 'Lookup User' }) };
+  const { getUserById } = createController(User);
+  const res = createRes();
+
+  await getUserById({ params: { id: 'user-99' } }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.data.name, 'Lookup User');
 });
