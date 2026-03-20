@@ -28,4 +28,8 @@ userSchema.methods.comparePassword = function comparePassword(candidatePassword)
   return bcrypt.compare(candidatePassword, this.password);
 };
 
+userSchema.statics.findByRole = function findByRole(role) {
+  return this.find({ role }).sort({ createdAt: -1 });
+};
+
 module.exports = mongoose.model('User', userSchema);

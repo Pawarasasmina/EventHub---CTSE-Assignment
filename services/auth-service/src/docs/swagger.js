@@ -23,6 +23,7 @@ module.exports = swaggerJSDoc({
       '/api/auth/register': { post: { summary: 'Register user', requestBody: { required: true }, responses: { 201: { description: 'Registered' } } } },
       '/api/auth/login': { post: { summary: 'Login user', requestBody: { required: true }, responses: { 200: { description: 'Logged in' } } } },
       '/api/auth/me': { get: { summary: 'Current user', security: [{ bearerAuth: [] }], responses: { 200: { description: 'Current user' } } } },
+      '/api/auth/users': { get: { summary: 'List users or users filtered by role', security: [{ bearerAuth: [] }], parameters: [{ name: 'role', in: 'query', required: false, schema: { type: 'string' } }], responses: { 200: { description: 'User list' } } } },
       '/api/auth/users/{id}': { get: { summary: 'Get user by id', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { 200: { description: 'User details' } } } }
     }
   },

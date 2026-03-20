@@ -10,23 +10,36 @@ const MyNotificationsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      try {
-        setLoading(true);
-        const response = await notificationApi.byUser(user.id);
-        setNotifications(response.data.data);
-      } catch (err) {
-        setError(err.response?.data?.message || 'Failed to load notifications');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true);
+      const response = await notificationApi.byUser(user.id);
+      setNotifications(response.data.data);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to load notifications');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     if (user?.id) {
       fetchNotifications();
     }
   }, [user?.id]);
+
+  const handleMarkAsRead = async (id) => {
+    try {
+      await notificationApi.markAsRead(id);
+      setNotifications((current) => current.map((notification) => (
+        notification._id === id
+          ? { ...notification, isRead: true, readAt: notification.readAt || new Date().toISOString() }
+          : notification
+      )));
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to mark notification as read');
+    }
+  };
 
   if (loading) return <Loader text="Loading notification center..." />;
 
@@ -44,7 +57,7 @@ const MyNotificationsPage = () => {
         {notifications.map((notification) => (
           <article className="event-card event-card--dashboard" key={notification._id}>
             <div className="event-card__eyebrow">
-              <span className="pill pill--soft">{notification.type}</span>
+              <span className={`pill ${notification.isRead ? 'pill--muted' : 'pill--soft'}`}>{notification.type}</span>
               <span className="event-card__date">{new Date(notification.createdAt).toLocaleDateString()}</span>
             </div>
             <div className="event-card__body">
@@ -53,14 +66,19 @@ const MyNotificationsPage = () => {
             </div>
             <dl className="event-card__facts">
               <div>
-                <dt>Status</dt>
+                <dt>Delivery</dt>
                 <dd>{notification.status}</dd>
               </div>
               <div>
-                <dt>Created</dt>
-                <dd>{new Date(notification.createdAt).toLocaleTimeString()}</dd>
+                <dt>Read state</dt>
+                <dd>{notification.isRead ? 'Read' : 'Unread'}</dd>
               </div>
             </dl>
+            {!notification.isRead && (
+              <button type="button" className="button button--ghost" onClick={() => handleMarkAsRead(notification._id)}>
+                Mark as read
+              </button>
+            )}
           </article>
         ))}
       </div>

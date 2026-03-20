@@ -1,10 +1,11 @@
 const express = require('express');
-const { body, param } = require('express-validator');
+const { body, param, query } = require('express-validator');
 const {
   register,
   login,
   getCurrentUser,
-  getUserById
+  getUserById,
+  listUsers
 } = require('../controllers/authController');
 const auth = require('../middleware/auth');
 const validate = require('../middleware/validate');
@@ -35,7 +36,7 @@ router.post(
 );
 
 router.get('/me', auth, asyncHandler(getCurrentUser));
-
+router.get('/users', auth, [query('role').optional().isIn(['customer', 'organizer', 'admin']).withMessage('Invalid role')], validate, asyncHandler(listUsers));
 router.get(
   '/users/:id',
   auth,

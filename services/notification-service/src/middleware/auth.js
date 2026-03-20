@@ -1,6 +1,16 @@
 const jwt = require('jsonwebtoken');
 
+const INTERNAL_SERVICE_SECRET = process.env.SERVICE_TO_SERVICE_SECRET || 'eventhub-internal-secret';
+
 module.exports = (req, res, next) => {
+  const serviceName = req.headers['x-internal-service-name'];
+  const serviceSecret = req.headers['x-internal-service-secret'];
+
+  if (serviceName && serviceSecret === INTERNAL_SERVICE_SECRET) {
+    req.internalService = serviceName;
+    return next();
+  }
+
   const header = req.headers.authorization;
 
   if (!header || !header.startsWith('Bearer ')) {

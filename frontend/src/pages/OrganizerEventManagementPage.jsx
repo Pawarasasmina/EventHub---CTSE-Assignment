@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { eventApi } from '../api/services';
+import { bookingApi, eventApi } from '../api/services';
 import ErrorMessage from '../components/ErrorMessage';
 import Loader from '../components/Loader';
 import { useAuth } from '../context/AuthContext';
@@ -18,9 +18,11 @@ const initialForm = {
 const OrganizerEventManagementPage = () => {
   const { user } = useAuth();
   const [events, setEvents] = useState([]);
+  const [approvals, setApprovals] = useState([]);
   const [form, setForm] = useState(initialForm);
   const [editingId, setEditingId] = useState('');
   const [loading, setLoading] = useState(true);
+  const [queueLoading, setQueueLoading] = useState(true);
   const [error, setError] = useState('');
 
   const fetchEvents = async () => {
@@ -35,11 +37,29 @@ const OrganizerEventManagementPage = () => {
     }
   };
 
+  const fetchApprovals = async () => {
+    try {
+      setQueueLoading(true);
+      const response = await bookingApi.approvalQueue();
+      setApprovals(response.data.data);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to load booking approval queue');
+    } finally {
+      setQueueLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchEvents();
+    fetchApprovals();
   }, []);
 
   const myEvents = useMemo(() => events.filter((event) => user.role === 'admin' || event.organizerId === user.id), [events, user]);
+
+  const refreshData = () => {
+    fetchEvents();
+    fetchApprovals();
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -87,13 +107,31 @@ const OrganizerEventManagementPage = () => {
     }
   };
 
+  const handleApprove = async (id) => {
+    try {
+      await bookingApi.confirm(id);
+      refreshData();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to confirm booking');
+    }
+  };
+
+  const handleReject = async (id) => {
+    try {
+      await bookingApi.reject(id);
+      refreshData();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to reject booking');
+    }
+  };
+
   return (
     <section className="page-stack">
       <section className="hero-panel hero-panel--compact">
         <div className="hero-panel__content">
           <span className="section-tag">Organizer workspace</span>
-          <h1>Manage event launches, pricing, publishing, and seat strategy in one control room.</h1>
-          <p>Build polished event listings and keep your operations synced with the event microservice.</p>
+          <h1>Manage event launches, approval queues, pricing, publishing, and seat strategy in one control room.</h1>
+          <p>Build polished event listings, review customer booking requests, and keep operations synced across event, booking, and notification services.</p>
         </div>
         <div className="hero-panel__stats hero-panel__stats--compact">
           <div>
@@ -105,13 +143,53 @@ const OrganizerEventManagementPage = () => {
             <span>Published</span>
           </div>
           <div>
-            <strong>{myEvents.reduce((sum, event) => sum + Number(event.availableSeats || 0), 0)}</strong>
-            <span>Seats open</span>
+            <strong>{approvals.length}</strong>
+            <span>Pending approvals</span>
           </div>
         </div>
       </section>
 
       <ErrorMessage message={error} />
+
+      <section className="page-stack">
+        <div className="section-heading">
+          <div>
+            <span className="section-tag">Booking workflow</span>
+            <h2>Approval queue</h2>
+          </div>
+          <p>Review pending booking requests before they become confirmed.</p>
+        </div>
+        {queueLoading ? <Loader text="Loading booking approvals..." /> : (
+          <div className="grid">
+            {approvals.map((booking) => (
+              <article className="event-card event-card--dashboard" key={booking._id}>
+                <div className="event-card__eyebrow">
+                  <span className="pill pill--soft">pending</span>
+                  <span className="event-card__date">{booking.ticketCount} tickets</span>
+                </div>
+                <div className="event-card__body">
+                  <h3>{booking.eventTitle}</h3>
+                  <p>{booking.eventVenue} • {new Date(booking.eventDate).toLocaleString()}</p>
+                </div>
+                <dl className="event-card__facts">
+                  <div>
+                    <dt>Customer ID</dt>
+                    <dd>{booking.userId}</dd>
+                  </div>
+                  <div>
+                    <dt>Total</dt>
+                    <dd>${booking.totalAmount}</dd>
+                  </div>
+                </dl>
+                <div className="button-row">
+                  <button type="button" className="button" onClick={() => handleApprove(booking._id)}>Confirm</button>
+                  <button type="button" className="button danger-button" onClick={() => handleReject(booking._id)}>Reject</button>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
 
       <div className="dashboard-layout">
         <form className="stack glass-card dashboard-form" onSubmit={handleSubmit}>

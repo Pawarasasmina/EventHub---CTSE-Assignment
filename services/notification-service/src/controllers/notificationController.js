@@ -1,8 +1,10 @@
 const Notification = require('../models/Notification');
 const { sendSuccess } = require('../utils/response');
 
+const canAccessNotification = (req, notification) => req.user?.role === 'admin' || req.user?.id === notification.userId;
+
 const sendNotification = async (req, res) => {
-  if (req.user.role !== 'admin' && req.user.id !== req.body.userId) {
+  if (!req.internalService && req.user.role !== 'admin' && req.user.id !== req.body.userId) {
     return res.status(403).json({ success: false, message: 'Access denied' });
   }
 
@@ -30,15 +32,34 @@ const getNotificationById = async (req, res) => {
     return res.status(404).json({ success: false, message: 'Notification not found' });
   }
 
-  if (req.user.role !== 'admin' && req.user.id !== notification.userId) {
+  if (!canAccessNotification(req, notification)) {
     return res.status(403).json({ success: false, message: 'Access denied' });
   }
 
   return sendSuccess(res, 200, 'Notification retrieved', notification);
 };
 
+const markNotificationAsRead = async (req, res) => {
+  const notification = await Notification.findById(req.params.id);
+
+  if (!notification) {
+    return res.status(404).json({ success: false, message: 'Notification not found' });
+  }
+
+  if (!canAccessNotification(req, notification)) {
+    return res.status(403).json({ success: false, message: 'Access denied' });
+  }
+
+  notification.isRead = true;
+  notification.readAt = notification.readAt || new Date();
+  await notification.save();
+
+  return sendSuccess(res, 200, 'Notification marked as read', notification);
+};
+
 module.exports = {
   sendNotification,
   getNotificationsByUser,
-  getNotificationById
+  getNotificationById,
+  markNotificationAsRead
 };

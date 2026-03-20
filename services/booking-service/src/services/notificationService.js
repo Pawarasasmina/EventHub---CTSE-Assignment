@@ -6,4 +6,9 @@ const createNotification = async (payload, token) => {
   return response.data.data;
 };
 
-module.exports = { createNotification };
+const createNotifications = async (payloads, token) => Promise.all(payloads.map((payload) => createNotification(payload, token)));
+
+module.exports = {
+  createNotification,
+  createNotifications
+};

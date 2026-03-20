@@ -53,12 +53,12 @@ const MyBookingsPage = () => {
         {bookings.map((booking) => (
           <article className="event-card event-card--dashboard" key={booking._id}>
             <div className="event-card__eyebrow">
-              <span className={`pill ${booking.status === 'cancelled' ? 'pill--muted' : 'pill--soft'}`}>{booking.status}</span>
+              <span className={`pill ${booking.status === 'cancelled' || booking.status === 'rejected' ? 'pill--muted' : 'pill--soft'}`}>{booking.status}</span>
               <span className="event-card__date">{booking.ticketCount} tickets</span>
             </div>
             <div className="event-card__body">
-              <h3>Booking #{booking._id.slice(-6)}</h3>
-              <p>Event reference: {booking.eventId}</p>
+              <h3>{booking.eventTitle || `Booking #${booking._id.slice(-6)}`}</h3>
+              <p>{booking.eventVenue || `Event reference: ${booking.eventId}`}</p>
             </div>
             <dl className="event-card__facts">
               <div>
@@ -66,11 +66,11 @@ const MyBookingsPage = () => {
                 <dd>${booking.totalAmount}</dd>
               </div>
               <div>
-                <dt>Status</dt>
-                <dd>{booking.status}</dd>
+                <dt>Date</dt>
+                <dd>{booking.eventDate ? new Date(booking.eventDate).toLocaleDateString() : 'Scheduled'}</dd>
               </div>
             </dl>
-            {booking.status !== 'cancelled' && <button onClick={() => handleCancel(booking._id)}>Cancel Booking</button>}
+            {!['cancelled', 'rejected'].includes(booking.status) && <button onClick={() => handleCancel(booking._id)}>Cancel Booking</button>}
           </article>
         ))}
       </div>

@@ -3,11 +3,13 @@ import { useAuth } from '../context/AuthContext';
 
 const NavBar = () => {
   const { user, logout } = useAuth();
+  const isAdmin = user?.role === 'admin';
+  const isOrganizerOrAdmin = ['organizer', 'admin'].includes(user?.role);
 
   return (
     <header className="topbar">
       <div className="topbar__inner">
-        <Link className="brand" to="/">
+        <Link className="brand" to={isAdmin ? '/organizer/events' : '/'}>
           <span className="brand__mark">EH</span>
           <span>
             <strong>EventHub</strong>
@@ -16,10 +18,11 @@ const NavBar = () => {
         </Link>
 
         <nav className="nav-links">
-          <NavLink to="/">Discover</NavLink>
-          {user && <NavLink to="/bookings">Bookings</NavLink>}
+          {!user && <NavLink to="/">Discover</NavLink>}
+          {user && !isAdmin && <NavLink to="/">Discover</NavLink>}
+          {user && !isAdmin && <NavLink to="/bookings">Bookings</NavLink>}
           {user && <NavLink to="/notifications">Alerts</NavLink>}
-          {user && ['organizer', 'admin'].includes(user.role) && <NavLink to="/organizer/events">Control Room</NavLink>}
+          {user && isOrganizerOrAdmin && <NavLink to="/organizer/events">Control Room</NavLink>}
         </nav>
 
         <div className="topbar__actions">

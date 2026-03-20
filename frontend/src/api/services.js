@@ -17,9 +17,13 @@ export const eventApi = {
 export const bookingApi = {
   create: (payload) => api.post('/bookings', payload),
   byUser: (userId) => api.get(`/bookings/user/${userId}`),
+  approvalQueue: () => api.get('/bookings/organizer/queue'),
+  confirm: (id) => api.patch(`/bookings/${id}/confirm`),
+  reject: (id) => api.patch(`/bookings/${id}/reject`),
   cancel: (id) => api.patch(`/bookings/${id}/cancel`)
 };
 
 export const notificationApi = {
-  byUser: (userId) => api.get(`/notifications/user/${userId}`)
+  byUser: (userId) => api.get(`/notifications/user/${userId}`),
+  markAsRead: (id) => api.patch(`/notifications/${id}/read`)
 };

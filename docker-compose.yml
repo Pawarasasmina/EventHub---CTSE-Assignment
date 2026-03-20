@@ -145,3 +145,4 @@ volumes:
 networks:
   eventhub-network:
     driver: bridge
+

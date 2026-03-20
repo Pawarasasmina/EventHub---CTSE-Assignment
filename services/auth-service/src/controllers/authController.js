@@ -58,6 +58,16 @@ const getCurrentUser = async (req, res) => {
   return sendSuccess(res, 200, 'Current user retrieved', sanitizeUser(user));
 };
 
+const listUsers = async (req, res) => {
+  if (!req.internalService && req.user?.role !== 'admin') {
+    return res.status(403).json({ success: false, message: 'Access denied' });
+  }
+
+  const role = req.query.role;
+  const users = role ? await User.findByRole(role) : await User.find().sort({ createdAt: -1 });
+  return sendSuccess(res, 200, 'Users retrieved', users.map(sanitizeUser));
+};
+
 const getUserById = async (req, res) => {
   const user = await User.findById(req.params.id);
 
@@ -72,5 +82,6 @@ module.exports = {
   register,
   login,
   getCurrentUser,
+  listUsers,
   getUserById
 };

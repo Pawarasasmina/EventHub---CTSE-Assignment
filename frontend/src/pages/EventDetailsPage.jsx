@@ -37,7 +37,7 @@ const EventDetailsPage = () => {
 
     try {
       await bookingApi.create({ eventId: id, ticketCount: Number(ticketCount) });
-      setSuccess('Booking completed successfully. Check My Bookings and My Notifications.');
+      setSuccess('Booking request submitted. The organizer or admin must confirm it before final approval.');
       const refreshed = await eventApi.detail(id);
       setEvent(refreshed.data.data);
     } catch (err) {
@@ -97,17 +97,21 @@ const EventDetailsPage = () => {
               <span>Publishing status</span>
               <strong>{event.isPublished ? 'Live to customers' : 'Draft mode'}</strong>
             </div>
+            <div>
+              <span>Approval flow</span>
+              <strong>Organizer/admin confirmation required</strong>
+            </div>
           </div>
         </article>
 
         <aside className="glass-card booking-panel">
           <span className="section-tag">Secure booking</span>
           <h2>Reserve your place</h2>
-          <p>Choose your ticket count and confirm instantly through the booking microservice.</p>
+          <p>Choose your ticket count and submit a booking request for organizer approval.</p>
           <ErrorMessage message={error} />
           {success && (
             <div className="notice notice--success">
-              <strong>Booking confirmed.</strong>
+              <strong>Request submitted.</strong>
               <span>{success}</span>
             </div>
           )}
@@ -126,10 +130,10 @@ const EventDetailsPage = () => {
                 <span>Total estimate</span>
                 <strong>${Number(ticketCount || 0) * Number(event.ticketPrice || 0)}</strong>
               </div>
-              <button type="submit" disabled={event.availableSeats < 1}>Book Tickets</button>
+              <button type="submit" disabled={event.availableSeats < 1}>Request Booking</button>
             </form>
           ) : (
-            <p className="state-message">Log in to book tickets and unlock personal notifications.</p>
+            <p className="state-message">Log in to submit a booking request and unlock personal notifications.</p>
           )}
         </aside>
       </div>
