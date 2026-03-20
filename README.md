@@ -1,6 +1,6 @@
 # EventHub
 
-EventHub is a MERN microservices event ticket booking platform built for a university assignment. It includes a React frontend, an Express API gateway, four backend microservices, and one MongoDB database per service.
+EventHub is a MERN microservices event ticket booking platform built for a university assignment. It now demonstrates both synchronous REST communication and asynchronous Kafka-based event handling.
 
 ## Architecture Summary
 
@@ -8,9 +8,10 @@ EventHub is a MERN microservices event ticket booking platform built for a unive
 - `gateway`: Express API gateway that exposes simple frontend routes and proxies requests to microservices
 - `services/auth-service`: registration, login, JWT identity, and user lookup
 - `services/event-service`: event catalog and organizer event management
-- `services/booking-service`: booking lifecycle and service-to-service orchestration
-- `services/notification-service`: mock notification storage and retrieval
+- `services/booking-service`: booking lifecycle, REST orchestration with event-service, and Kafka event publishing
+- `services/notification-service`: mock notification storage, retrieval, and Kafka event consumption
 - MongoDB: one isolated database container per service
+- Kafka: asynchronous event bus for booking confirmation and booking cancellation events
 
 All backend services use CommonJS, JavaScript, REST over HTTP, JWT authentication, and their own independent MongoDB connection.
 
@@ -18,14 +19,16 @@ All backend services use CommonJS, JavaScript, REST over HTTP, JWT authenticatio
 
 ```text
 EventHub/
-├── docker-compose.yml
-├── gateway/
-├── frontend/
-└── services/
-    ├── auth-service/
-    ├── booking-service/
-    ├── event-service/
-    └── notification-service/
++-- .github/workflows/
++-- docker-compose.yml
++-- sonar-project.properties
++-- gateway/
++-- frontend/
++-- services/
+    +-- auth-service/
+    +-- booking-service/
+    +-- event-service/
+    +-- notification-service/
 ```
 
 ## Service Ports
@@ -36,22 +39,32 @@ EventHub/
 - Event Service: `5002`
 - Booking Service: `5003`
 - Notification Service: `5004`
+- Kafka External Listener: `9094`
+
+## Communication Flow
+
+- Frontend calls the gateway only
+- Gateway proxies requests to backend services
+- Booking service checks availability and reserves seats through event-service using REST
+- Booking service publishes `booking.created` and `booking.cancelled` events to Kafka
+- Notification service consumes those events and creates mock in-app notifications asynchronously
 
 ## Local Setup Without Docker
 
 1. Make sure MongoDB is running locally.
-2. Copy each `.env.example` to `.env` in:
+2. Make sure Kafka is running locally and accessible at `localhost:9092`.
+3. Copy each `.env.example` to `.env` in:
    - `gateway`
    - `frontend`
    - `services/auth-service`
    - `services/event-service`
    - `services/booking-service`
    - `services/notification-service`
-3. Install dependencies and start services in this order:
+4. Install dependencies and start services in this order:
    - `services/auth-service`
    - `services/event-service`
-   - `services/booking-service`
    - `services/notification-service`
+   - `services/booking-service`
    - `gateway`
    - `frontend`
 
@@ -66,6 +79,31 @@ docker compose up --build
 
 3. Open `http://localhost:5173`.
 
+## CI/CD And DevSecOps
+
+This repository includes GitHub Actions workflows for:
+- CI syntax checks for gateway and backend services
+- Frontend production build validation
+- Docker image publishing to GitHub Container Registry (`ghcr.io`)
+- SonarCloud static analysis scanning
+
+### Required GitHub Secrets / Settings
+
+Set these in your GitHub repository before enabling all workflows:
+- `SONAR_TOKEN`: SonarCloud user token
+
+Update [sonar-project.properties](d:\.SLIIT\Y-4 S-2\EventHub\sonar-project.properties) with:
+- your SonarCloud project key
+- your SonarCloud organization
+
+The Docker publish workflow uses GitHub Container Registry and the built-in `GITHUB_TOKEN`, so no extra Docker registry secret is required for GHCR.
+
+### Workflow Files
+
+- [.github/workflows/ci.yml](d:\.SLIIT\Y-4 S-2\EventHub\.github\workflows\ci.yml)
+- [.github/workflows/docker-publish.yml](d:\.SLIIT\Y-4 S-2\EventHub\.github\workflows\docker-publish.yml)
+- [.github/workflows/sonarcloud.yml](d:\.SLIIT\Y-4 S-2\EventHub\.github\workflows\sonarcloud.yml)
+
 ## Test Flow
 
 1. Register a customer account and an organizer account.
@@ -75,6 +113,7 @@ docker compose up --build
 5. Confirm the booking appears under My Bookings.
 6. Confirm a notification appears under My Notifications.
 7. Cancel the booking and verify seats are released and a cancellation notification is stored.
+8. Check Kafka-backed async delivery by watching notification-service logs during booking and cancellation.
 
 ## Notes
 
@@ -84,5 +123,4 @@ docker compose up --build
   - `/events/*`
   - `/bookings/*`
   - `/notifications/*`
-
-"# EventHub---CTSE-Assignment" 
+- Kafka is used for asynchronous notification creation while the core booking seat checks remain synchronous over REST.
