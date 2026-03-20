@@ -1,6 +1,12 @@
 const ErrorMessage = ({ message }) => {
   if (!message) return null;
-  return <p className="error-message">{message}</p>;
+
+  return (
+    <div className="notice notice--error" role="alert">
+      <strong>Something needs attention.</strong>
+      <span>{message}</span>
+    </div>
+  );
 };
 
 export default ErrorMessage;

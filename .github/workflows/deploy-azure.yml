@@ -1,0 +1,64 @@
+name: Deploy To Azure Container Apps
+
+on:
+  workflow_run:
+    workflows:
+      - Publish Docker Images
+    types:
+      - completed
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      RESOURCE_GROUP: eventhub-rg
+      AUTH_APP: auth-service
+      EVENT_APP: event-service
+      BOOKING_APP: booking-service
+      NOTIFICATION_APP: notification-service
+      GATEWAY_APP: gateway
+      GHCR_OWNER: pawarasasmina
+    steps:
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy auth-service
+        run: |
+          az containerapp update \
+            --name "$AUTH_APP" \
+            --resource-group "$RESOURCE_GROUP" \
+            --image "ghcr.io/$GHCR_OWNER/eventhub-auth-service:latest"
+
+      - name: Deploy event-service
+        run: |
+          az containerapp update \
+            --name "$EVENT_APP" \
+            --resource-group "$RESOURCE_GROUP" \
+            --image "ghcr.io/$GHCR_OWNER/eventhub-event-service:latest"
+
+      - name: Deploy notification-service
+        run: |
+          az containerapp update \
+            --name "$NOTIFICATION_APP" \
+            --resource-group "$RESOURCE_GROUP" \
+            --image "ghcr.io/$GHCR_OWNER/eventhub-notification-service:latest"
+
+      - name: Deploy booking-service
+        run: |
+          az containerapp update \
+            --name "$BOOKING_APP" \
+            --resource-group "$RESOURCE_GROUP" \
+            --image "ghcr.io/$GHCR_OWNER/eventhub-booking-service:latest"
+
+      - name: Deploy gateway
+        run: |
+          az containerapp update \
+            --name "$GATEWAY_APP" \
+            --resource-group "$RESOURCE_GROUP" \
+            --image "ghcr.io/$GHCR_OWNER/eventhub-gateway:latest"

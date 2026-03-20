@@ -88,40 +88,99 @@ const OrganizerEventManagementPage = () => {
   };
 
   return (
-    <section>
-      <h1>Organizer Event Management</h1>
-      <ErrorMessage message={error} />
-      <form className="stack card" onSubmit={handleSubmit}>
-        <input placeholder="Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-        <textarea placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-        <input placeholder="Category" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
-        <input placeholder="Venue" value={form.venue} onChange={(e) => setForm({ ...form, venue: e.target.value })} />
-        <input type="datetime-local" value={form.eventDate} onChange={(e) => setForm({ ...form, eventDate: e.target.value })} />
-        <input type="number" placeholder="Ticket Price" value={form.ticketPrice} onChange={(e) => setForm({ ...form, ticketPrice: e.target.value })} />
-        <input type="number" placeholder="Total Seats" value={form.totalSeats} onChange={(e) => setForm({ ...form, totalSeats: e.target.value })} />
-        <label className="checkbox-row">
-          <input type="checkbox" checked={form.isPublished} onChange={(e) => setForm({ ...form, isPublished: e.target.checked })} />
-          Publish event
-        </label>
-        <button type="submit">{editingId ? 'Update Event' : 'Create Event'}</button>
-      </form>
-      {loading ? <Loader text="Loading organizer events..." /> : (
-        <div className="grid">
-          {myEvents.map((event) => (
-            <article className="card" key={event._id}>
-              <h3>{event.title}</h3>
-              <p>{event.venue}</p>
-              <p>{new Date(event.eventDate).toLocaleString()}</p>
-              <p>Seats: {event.availableSeats}/{event.totalSeats}</p>
-              <p>Status: {event.isPublished ? 'Published' : 'Draft'}</p>
-              <div className="button-row">
-                <button onClick={() => handleEdit(event)}>Edit</button>
-                <button className="danger-button" onClick={() => handleDelete(event._id)}>Delete</button>
-              </div>
-            </article>
-          ))}
+    <section className="page-stack">
+      <section className="hero-panel hero-panel--compact">
+        <div className="hero-panel__content">
+          <span className="section-tag">Organizer workspace</span>
+          <h1>Manage event launches, pricing, publishing, and seat strategy in one control room.</h1>
+          <p>Build polished event listings and keep your operations synced with the event microservice.</p>
         </div>
-      )}
+        <div className="hero-panel__stats hero-panel__stats--compact">
+          <div>
+            <strong>{myEvents.length}</strong>
+            <span>Events owned</span>
+          </div>
+          <div>
+            <strong>{myEvents.filter((event) => event.isPublished).length}</strong>
+            <span>Published</span>
+          </div>
+          <div>
+            <strong>{myEvents.reduce((sum, event) => sum + Number(event.availableSeats || 0), 0)}</strong>
+            <span>Seats open</span>
+          </div>
+        </div>
+      </section>
+
+      <ErrorMessage message={error} />
+
+      <div className="dashboard-layout">
+        <form className="stack glass-card dashboard-form" onSubmit={handleSubmit}>
+          <div className="section-heading">
+            <div>
+              <span className="section-tag">Event editor</span>
+              <h2>{editingId ? 'Update listing' : 'Create new event'}</h2>
+            </div>
+          </div>
+          <input placeholder="Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+          <textarea placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+          <div className="form-split">
+            <input placeholder="Category" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
+            <input placeholder="Venue" value={form.venue} onChange={(e) => setForm({ ...form, venue: e.target.value })} />
+          </div>
+          <div className="form-split">
+            <input type="datetime-local" value={form.eventDate} onChange={(e) => setForm({ ...form, eventDate: e.target.value })} />
+            <input type="number" placeholder="Ticket Price" value={form.ticketPrice} onChange={(e) => setForm({ ...form, ticketPrice: e.target.value })} />
+          </div>
+          <input type="number" placeholder="Total Seats" value={form.totalSeats} onChange={(e) => setForm({ ...form, totalSeats: e.target.value })} />
+          <label className="checkbox-tile">
+            <input type="checkbox" checked={form.isPublished} onChange={(e) => setForm({ ...form, isPublished: e.target.checked })} />
+            <span>
+              <strong>Publish this event</strong>
+              <small>Visible immediately to attendees in the marketplace.</small>
+            </span>
+          </label>
+          <button type="submit">{editingId ? 'Update Event' : 'Create Event'}</button>
+        </form>
+
+        <section className="page-stack">
+          <div className="section-heading">
+            <div>
+              <span className="section-tag">Portfolio overview</span>
+              <h2>Your managed events</h2>
+            </div>
+          </div>
+          {loading ? <Loader text="Loading organizer events..." /> : (
+            <div className="grid">
+              {myEvents.map((event) => (
+                <article className="event-card event-card--dashboard" key={event._id}>
+                  <div className="event-card__eyebrow">
+                    <span className="pill pill--soft">{event.isPublished ? 'Published' : 'Draft'}</span>
+                    <span className="event-card__date">{new Date(event.eventDate).toLocaleDateString()}</span>
+                  </div>
+                  <div className="event-card__body">
+                    <h3>{event.title}</h3>
+                    <p>{event.venue}</p>
+                  </div>
+                  <dl className="event-card__facts">
+                    <div>
+                      <dt>Seats</dt>
+                      <dd>{event.availableSeats}/{event.totalSeats}</dd>
+                    </div>
+                    <div>
+                      <dt>Price</dt>
+                      <dd>${event.ticketPrice}</dd>
+                    </div>
+                  </dl>
+                  <div className="button-row">
+                    <button type="button" className="button button--ghost" onClick={() => handleEdit(event)}>Edit</button>
+                    <button type="button" className="button danger-button" onClick={() => handleDelete(event._id)}>Delete</button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
     </section>
   );
 };

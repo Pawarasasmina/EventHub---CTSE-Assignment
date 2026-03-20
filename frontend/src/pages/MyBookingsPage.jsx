@@ -37,20 +37,39 @@ const MyBookingsPage = () => {
     }
   };
 
-  if (loading) return <Loader text="Loading bookings..." />;
+  if (loading) return <Loader text="Loading booking history..." />;
 
   return (
-    <section>
-      <h1>My Bookings</h1>
+    <section className="page-stack">
+      <section className="section-heading">
+        <div>
+          <span className="section-tag">Customer dashboard</span>
+          <h1>My bookings</h1>
+        </div>
+        <p>{bookings.length} reservation records available</p>
+      </section>
       <ErrorMessage message={error} />
       <div className="grid">
         {bookings.map((booking) => (
-          <article className="card" key={booking._id}>
-            <p><strong>Booking ID:</strong> {booking._id}</p>
-            <p><strong>Event ID:</strong> {booking.eventId}</p>
-            <p><strong>Tickets:</strong> {booking.ticketCount}</p>
-            <p><strong>Total:</strong> ${booking.totalAmount}</p>
-            <p><strong>Status:</strong> {booking.status}</p>
+          <article className="event-card event-card--dashboard" key={booking._id}>
+            <div className="event-card__eyebrow">
+              <span className={`pill ${booking.status === 'cancelled' ? 'pill--muted' : 'pill--soft'}`}>{booking.status}</span>
+              <span className="event-card__date">{booking.ticketCount} tickets</span>
+            </div>
+            <div className="event-card__body">
+              <h3>Booking #{booking._id.slice(-6)}</h3>
+              <p>Event reference: {booking.eventId}</p>
+            </div>
+            <dl className="event-card__facts">
+              <div>
+                <dt>Total</dt>
+                <dd>${booking.totalAmount}</dd>
+              </div>
+              <div>
+                <dt>Status</dt>
+                <dd>{booking.status}</dd>
+              </div>
+            </dl>
             {booking.status !== 'cancelled' && <button onClick={() => handleCancel(booking._id)}>Cancel Booking</button>}
           </article>
         ))}

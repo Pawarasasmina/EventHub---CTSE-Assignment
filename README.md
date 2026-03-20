@@ -82,11 +82,13 @@ This repository includes GitHub Actions workflows for:
 - Frontend production build validation
 - Docker image publishing to GitHub Container Registry (`ghcr.io`)
 - SonarCloud static analysis scanning
+- Azure Container Apps deployment after image publishing succeeds
 
 ### Required GitHub Secrets / Settings
 
 Set these in your GitHub repository before enabling all workflows:
 - `SONAR_TOKEN`: SonarCloud user token
+- `AZURE_CREDENTIALS`: Azure service principal credentials JSON for deployment workflow
 
 Update [sonar-project.properties](/d:\.SLIIT\Y-4 S-2\EventHub\sonar-project.properties) with:
 - your SonarCloud project key
@@ -98,6 +100,7 @@ The Docker publish workflow uses GitHub Container Registry and the built-in `GIT
 
 - [.github/workflows/ci.yml](/d:\.SLIIT\Y-4 S-2\EventHub\.github\workflows\ci.yml)
 - [.github/workflows/docker-publish.yml](/d:\.SLIIT\Y-4 S-2\EventHub\.github\workflows\docker-publish.yml)
+- [.github/workflows/deploy-azure.yml](/d:\.SLIIT\Y-4 S-2\EventHub\.github\workflows\deploy-azure.yml)
 - [.github/workflows/sonarcloud.yml](/d:\.SLIIT\Y-4 S-2\EventHub\.github\workflows\sonarcloud.yml)
 
 ## Test Flow

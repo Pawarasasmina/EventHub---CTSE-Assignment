@@ -28,20 +28,39 @@ const MyNotificationsPage = () => {
     }
   }, [user?.id]);
 
-  if (loading) return <Loader text="Loading notifications..." />;
+  if (loading) return <Loader text="Loading notification center..." />;
 
   return (
-    <section>
-      <h1>My Notifications</h1>
+    <section className="page-stack">
+      <section className="section-heading">
+        <div>
+          <span className="section-tag">Notification center</span>
+          <h1>My notifications</h1>
+        </div>
+        <p>{notifications.length} messages synced from the notification microservice</p>
+      </section>
       <ErrorMessage message={error} />
       <div className="grid">
         {notifications.map((notification) => (
-          <article className="card" key={notification._id}>
-            <h3>{notification.title}</h3>
-            <p>{notification.message}</p>
-            <p><strong>Type:</strong> {notification.type}</p>
-            <p><strong>Status:</strong> {notification.status}</p>
-            <p><strong>Created:</strong> {new Date(notification.createdAt).toLocaleString()}</p>
+          <article className="event-card event-card--dashboard" key={notification._id}>
+            <div className="event-card__eyebrow">
+              <span className="pill pill--soft">{notification.type}</span>
+              <span className="event-card__date">{new Date(notification.createdAt).toLocaleDateString()}</span>
+            </div>
+            <div className="event-card__body">
+              <h3>{notification.title}</h3>
+              <p>{notification.message}</p>
+            </div>
+            <dl className="event-card__facts">
+              <div>
+                <dt>Status</dt>
+                <dd>{notification.status}</dd>
+              </div>
+              <div>
+                <dt>Created</dt>
+                <dd>{new Date(notification.createdAt).toLocaleTimeString()}</dd>
+              </div>
+            </dl>
           </article>
         ))}
       </div>

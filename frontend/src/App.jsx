@@ -16,6 +16,8 @@ const App = () => (
   <AuthProvider>
     <BrowserRouter>
       <div className="app-shell">
+        <div className="app-shell__glow app-shell__glow--amber" />
+        <div className="app-shell__glow app-shell__glow--teal" />
         <NavBar />
         <main className="page-container">
           <Routes>

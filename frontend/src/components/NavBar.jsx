@@ -6,16 +6,39 @@ const NavBar = () => {
 
   return (
     <header className="topbar">
-      <Link className="brand" to="/">EventHub</Link>
-      <nav className="nav-links">
-        <NavLink to="/">Events</NavLink>
-        {user && <NavLink to="/bookings">My Bookings</NavLink>}
-        {user && <NavLink to="/notifications">My Notifications</NavLink>}
-        {user && ['organizer', 'admin'].includes(user.role) && <NavLink to="/organizer/events">Manage Events</NavLink>}
-        {!user && <NavLink to="/login">Login</NavLink>}
-        {!user && <NavLink to="/register">Register</NavLink>}
-        {user && <button className="link-button" onClick={logout}>Logout</button>}
-      </nav>
+      <div className="topbar__inner">
+        <Link className="brand" to="/">
+          <span className="brand__mark">EH</span>
+          <span>
+            <strong>EventHub</strong>
+            <small>Curated event operations platform</small>
+          </span>
+        </Link>
+
+        <nav className="nav-links">
+          <NavLink to="/">Discover</NavLink>
+          {user && <NavLink to="/bookings">Bookings</NavLink>}
+          {user && <NavLink to="/notifications">Alerts</NavLink>}
+          {user && ['organizer', 'admin'].includes(user.role) && <NavLink to="/organizer/events">Control Room</NavLink>}
+        </nav>
+
+        <div className="topbar__actions">
+          {user ? (
+            <>
+              <div className="user-pill">
+                <span className="user-pill__name">{user.name}</span>
+                <span className="user-pill__meta">{user.role}</span>
+              </div>
+              <button className="button button--ghost" onClick={logout}>Logout</button>
+            </>
+          ) : (
+            <>
+              <NavLink className="button button--ghost" to="/login">Login</NavLink>
+              <NavLink className="button" to="/register">Create account</NavLink>
+            </>
+          )}
+        </div>
+      </div>
     </header>
   );
 };
