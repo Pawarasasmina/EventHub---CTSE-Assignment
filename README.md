@@ -1,6 +1,6 @@
 # EventHub
 
-EventHub is a MERN microservices event ticket booking platform built for a university assignment. It now demonstrates both synchronous REST communication and asynchronous Kafka-based event handling.
+EventHub is a MERN microservices event ticket booking platform built for a university assignment. It demonstrates synchronous REST-based microservice communication, Docker containerization, CI/CD, and secure role-based access.
 
 ## Architecture Summary
 
@@ -8,10 +8,9 @@ EventHub is a MERN microservices event ticket booking platform built for a unive
 - `gateway`: Express API gateway that exposes simple frontend routes and proxies requests to microservices
 - `services/auth-service`: registration, login, JWT identity, and user lookup
 - `services/event-service`: event catalog and organizer event management
-- `services/booking-service`: booking lifecycle, REST orchestration with event-service, and Kafka event publishing
-- `services/notification-service`: mock notification storage, retrieval, and Kafka event consumption
+- `services/booking-service`: booking lifecycle and REST orchestration with event-service and notification-service
+- `services/notification-service`: mock notification storage and retrieval
 - MongoDB: one isolated database container per service
-- Kafka: asynchronous event bus for booking confirmation and booking cancellation events
 
 All backend services use CommonJS, JavaScript, REST over HTTP, JWT authentication, and their own independent MongoDB connection.
 
@@ -39,28 +38,25 @@ EventHub/
 - Event Service: `5002`
 - Booking Service: `5003`
 - Notification Service: `5004`
-- Kafka External Listener: `9094`
 
 ## Communication Flow
 
 - Frontend calls the gateway only
 - Gateway proxies requests to backend services
 - Booking service checks availability and reserves seats through event-service using REST
-- Booking service publishes `booking.created` and `booking.cancelled` events to Kafka
-- Notification service consumes those events and creates mock in-app notifications asynchronously
+- Booking service calls notification-service over REST after booking confirmation and cancellation
 
 ## Local Setup Without Docker
 
 1. Make sure MongoDB is running locally.
-2. Make sure Kafka is running locally and accessible at `localhost:9092`.
-3. Copy each `.env.example` to `.env` in:
+2. Copy each `.env.example` to `.env` in:
    - `gateway`
    - `frontend`
    - `services/auth-service`
    - `services/event-service`
    - `services/booking-service`
    - `services/notification-service`
-4. Install dependencies and start services in this order:
+3. Install dependencies and start services in this order:
    - `services/auth-service`
    - `services/event-service`
    - `services/notification-service`
@@ -92,7 +88,7 @@ This repository includes GitHub Actions workflows for:
 Set these in your GitHub repository before enabling all workflows:
 - `SONAR_TOKEN`: SonarCloud user token
 
-Update [sonar-project.properties](d:\.SLIIT\Y-4 S-2\EventHub\sonar-project.properties) with:
+Update [sonar-project.properties](/d:\.SLIIT\Y-4 S-2\EventHub\sonar-project.properties) with:
 - your SonarCloud project key
 - your SonarCloud organization
 
@@ -100,9 +96,9 @@ The Docker publish workflow uses GitHub Container Registry and the built-in `GIT
 
 ### Workflow Files
 
-- [.github/workflows/ci.yml](d:\.SLIIT\Y-4 S-2\EventHub\.github\workflows\ci.yml)
-- [.github/workflows/docker-publish.yml](d:\.SLIIT\Y-4 S-2\EventHub\.github\workflows\docker-publish.yml)
-- [.github/workflows/sonarcloud.yml](d:\.SLIIT\Y-4 S-2\EventHub\.github\workflows\sonarcloud.yml)
+- [.github/workflows/ci.yml](/d:\.SLIIT\Y-4 S-2\EventHub\.github\workflows\ci.yml)
+- [.github/workflows/docker-publish.yml](/d:\.SLIIT\Y-4 S-2\EventHub\.github\workflows\docker-publish.yml)
+- [.github/workflows/sonarcloud.yml](/d:\.SLIIT\Y-4 S-2\EventHub\.github\workflows\sonarcloud.yml)
 
 ## Test Flow
 
@@ -113,7 +109,6 @@ The Docker publish workflow uses GitHub Container Registry and the built-in `GIT
 5. Confirm the booking appears under My Bookings.
 6. Confirm a notification appears under My Notifications.
 7. Cancel the booking and verify seats are released and a cancellation notification is stored.
-8. Check Kafka-backed async delivery by watching notification-service logs during booking and cancellation.
 
 ## Notes
 
@@ -123,4 +118,4 @@ The Docker publish workflow uses GitHub Container Registry and the built-in `GIT
   - `/events/*`
   - `/bookings/*`
   - `/notifications/*`
-- Kafka is used for asynchronous notification creation while the core booking seat checks remain synchronous over REST.
+- The system uses REST-based service-to-service communication, which is sufficient for the assignment's inter-service integration requirement.
