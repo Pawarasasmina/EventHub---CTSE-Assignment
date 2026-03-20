@@ -30,6 +30,90 @@ Each of them has at least one working integration point with another service in 
 - `booking-service` -> `notification-service` for customer, organizer, and admin booking alerts
 - `notification-service` -> serves role-specific notifications to frontend users
 
+## Quick Links
+
+### Swagger / API Docs
+
+Use these local Swagger endpoints when the services are running:
+
+- Auth Service Swagger: `http://localhost:5001/api-docs`
+- Event Service Swagger: `http://localhost:5002/api-docs`
+- Booking Service Swagger: `http://localhost:5003/api-docs`
+- Notification Service Swagger: `http://localhost:5004/api-docs`
+
+Swagger source files in the repository:
+
+- [services/auth-service/src/docs/swagger.js](d:\.SLIIT\Y-4%20S-2\EventHub\services\auth-service\src\docs\swagger.js)
+- [services/event-service/src/docs/swagger.js](d:\.SLIIT\Y-4%20S-2\EventHub\services\event-service\src\docs\swagger.js)
+- [services/booking-service/src/docs/swagger.js](d:\.SLIIT\Y-4%20S-2\EventHub\services\booking-service\src\docs\swagger.js)
+- [services/notification-service/src/docs/swagger.js](d:\.SLIIT\Y-4%20S-2\EventHub\services\notification-service\src\docs\swagger.js)
+
+### CI/CD Workflow Files
+
+- [CI Workflow](d:\.SLIIT\Y-4%20S-2\EventHub\.github\workflows\ci.yml)
+- [Docker Publish Workflow](d:\.SLIIT\Y-4%20S-2\EventHub\.github\workflows\docker-publish.yml)
+- [SonarCloud Workflow](d:\.SLIIT\Y-4%20S-2\EventHub\.github\workflows\sonarcloud.yml)
+- [Azure Deploy Workflow](d:\.SLIIT\Y-4%20S-2\EventHub\.github\workflows\deploy-azure.yml)
+
+### Docker / Container Files
+
+- [docker-compose.yml](d:\.SLIIT\Y-4%20S-2\EventHub\docker-compose.yml)
+- [gateway/Dockerfile](d:\.SLIIT\Y-4%20S-2\EventHub\gateway\Dockerfile)
+- [frontend/Dockerfile](d:\.SLIIT\Y-4%20S-2\EventHub\frontend\Dockerfile)
+- [services/auth-service/Dockerfile](d:\.SLIIT\Y-4%20S-2\EventHub\services\auth-service\Dockerfile)
+- [services/event-service/Dockerfile](d:\.SLIIT\Y-4%20S-2\EventHub\services\event-service\Dockerfile)
+- [services/booking-service/Dockerfile](d:\.SLIIT\Y-4%20S-2\EventHub\services\booking-service\Dockerfile)
+- [services/notification-service/Dockerfile](d:\.SLIIT\Y-4%20S-2\EventHub\services\notification-service\Dockerfile)
+
+### Report / Project Docs
+
+- [Team Component Mapping](d:/%2E%20SLIIT/Y-4%20S-2/EventHub/docs/TEAM_COMPONENTS.md)
+- [Technical Reference](d:/%2E%20SLIIT/Y-4%20S-2/EventHub/docs/TECHNICAL_REFERENCE.md)
+- [Report Writing Guide](d:/%2E%20SLIIT/Y-4%20S-2/EventHub/docs/REPORT_GUIDE.md)
+- [Full Report Template](d:/%2E%20SLIIT/Y-4%20S-2/EventHub/docs/FULL_REPORT_TEMPLATE.md)
+- [Member 1 Report](d:/%2E%20SLIIT/Y-4%20S-2/EventHub/docs/REPORT_MEMBER_1_AUTH.md)
+- [Member 2 Report](d:/%2E%20SLIIT/Y-4%20S-2/EventHub/docs/REPORT_MEMBER_2_EVENT.md)
+- [Member 3 Report](d:/%2E%20SLIIT/Y-4%20S-2/EventHub/docs/REPORT_MEMBER_3_BOOKING.md)
+- [Member 4 Report](d:/%2E%20SLIIT/Y-4%20S-2/EventHub/docs/REPORT_MEMBER_4_NOTIFICATION.md)
+- [Personal Azure CI/CD Setup](d:/%2E%20SLIIT/Y-4%20S-2/EventHub/docs/AZURE_PERSONAL_SETUP.md)
+- [Personal Azure Step By Step](d:/%2E%20SLIIT/Y-4%20S-2/EventHub/docs/PERSONAL_AZURE_STEP_BY_STEP.md)
+
+## Code Repository Deliverables
+
+This public repository contains the required assignment deliverables for the code submission.
+
+### 1. Public Repository With Source Code
+
+The repository includes the full source code for:
+
+- `frontend`
+- `gateway`
+- `services/auth-service`
+- `services/event-service`
+- `services/booking-service`
+- `services/notification-service`
+
+### 2. API Contract / OpenAPI / Swagger
+
+Each backend microservice exposes Swagger documentation at:
+
+- `auth-service -> /api-docs`
+- `event-service -> /api-docs`
+- `booking-service -> /api-docs`
+- `notification-service -> /api-docs`
+
+### 3. CI/CD Pipeline Configuration Files
+
+The repository includes GitHub Actions workflow files under `.github/workflows/` for CI, container publishing, SonarCloud scanning, and Azure deployment.
+
+### 4. Dockerfile And Container Configuration
+
+Each deployable component includes a Dockerfile, and the root project includes `docker-compose.yml` for local multi-service startup.
+
+### 5. Access To Version-Controlled Repository
+
+All project files are maintained in Git and intended to be submitted through the public GitHub repository. The repository history, workflows, Docker configuration, and service code are all available from the same version-controlled source.
+
 ## Current Booking Flow
 
 1. Customer submits a booking request.
@@ -123,25 +207,15 @@ There are now two supported deployment stories:
 If you want the clean personal-subscription setup, follow:
 
 - [Personal Azure CI/CD Setup](d:/%2E%20SLIIT/Y-4%20S-2/EventHub/docs/AZURE_PERSONAL_SETUP.md)
+- [Personal Azure Step By Step](d:/%2E%20SLIIT/Y-4%20S-2/EventHub/docs/PERSONAL_AZURE_STEP_BY_STEP.md)
 
 This gives a stronger DevOps and cloud deployment story for the assignment.
-
-## Swagger / API Docs
-
-Each service exposes Swagger at `/api-docs`.
-
-## Recommended Reading
-
-- [Team Component Mapping](d:/%2E%20SLIIT/Y-4%20S-2/EventHub/docs/TEAM_COMPONENTS.md)
-- [Technical Reference](d:/%2E%20SLIIT/Y-4%20S-2/EventHub/docs/TECHNICAL_REFERENCE.md)
-- [Report Writing Guide](d:/%2E%20SLIIT/Y-4%20S-2/EventHub/docs/REPORT_GUIDE.md)
-- [Personal Azure CI/CD Setup](d:/%2E%20SLIIT/Y-4%20S-2/EventHub/docs/AZURE_PERSONAL_SETUP.md)
 
 ## Final Notes
 
 Before final demo or submission:
 
 - verify latest GitHub Actions are green
-- rebuild/redeploy latest service changes
+- rebuild or redeploy latest service changes
 - test customer, organizer, and admin flows
 - rotate any exposed secrets if needed
