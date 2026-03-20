@@ -22,6 +22,9 @@ jobs:
         with:
           node-version: 20
 
+      - name: Install root test dependencies
+        run: npm install
+
       - name: Install frontend dependencies
         run: npm ci
         working-directory: frontend
@@ -45,6 +48,9 @@ jobs:
       - name: Install notification-service dependencies
         run: npm install
         working-directory: services/notification-service
+
+      - name: Run backend tests with coverage
+        run: npm run test:coverage
 
       - name: SonarCloud scan
         uses: SonarSource/sonarqube-scan-action@v6
