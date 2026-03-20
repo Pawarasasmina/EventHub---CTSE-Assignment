@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const bookingSchema = new mongoose.Schema(
   {
     userId: { type: String, required: true },
+    customerName: { type: String, required: true, trim: true },
     organizerId: { type: String, required: true },
     eventId: { type: String, required: true },
     eventTitle: { type: String, required: true, trim: true },

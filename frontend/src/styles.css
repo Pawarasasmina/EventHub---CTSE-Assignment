@@ -877,3 +877,205 @@ strong {
     align-items: flex-start;
   }
 }
+
+.control-room-page {
+  gap: 1.8rem;
+}
+
+.control-room-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(340px, 0.95fr);
+  gap: 1.4rem;
+  padding: 1.6rem;
+}
+
+.control-room-header__intro {
+  padding: 2rem;
+  border-radius: 28px;
+  background: linear-gradient(140deg, rgba(17, 66, 83, 0.95), rgba(12, 31, 39, 0.92));
+  color: #eef8f7;
+}
+
+.control-room-header__intro h1,
+.control-room-header__intro p,
+.control-room-header__intro strong,
+.control-room-header__intro span {
+  color: inherit;
+}
+
+.control-room-header__intro h1 {
+  font-size: clamp(2.1rem, 4vw, 4.2rem);
+  line-height: 0.98;
+  letter-spacing: -0.05em;
+  margin-bottom: 1rem;
+}
+
+.control-room-header__intro p {
+  max-width: 60ch;
+  color: rgba(238, 248, 247, 0.84);
+  margin-bottom: 0;
+}
+
+.control-room-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.metric-card {
+  padding: 1.35rem;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(17, 32, 39, 0.08);
+  box-shadow: 0 16px 30px rgba(16, 31, 38, 0.08);
+}
+
+.metric-card span {
+  display: block;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #6b7d85;
+  margin-bottom: 0.5rem;
+}
+
+.metric-card strong {
+  display: block;
+  font-size: 2rem;
+  line-height: 1;
+  margin-bottom: 0.45rem;
+}
+
+.metric-card small {
+  color: #60727b;
+}
+
+.control-room-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.18fr) minmax(340px, 0.88fr);
+  gap: 1.4rem;
+  align-items: start;
+}
+
+.control-room-sidebar {
+  position: sticky;
+  top: 6.5rem;
+}
+
+.section-panel {
+  padding: 1.5rem;
+}
+
+.section-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.15rem;
+}
+
+.section-panel__header h2 {
+  margin-bottom: 0;
+  font-size: 1.7rem;
+}
+
+.section-panel__header p {
+  max-width: 28ch;
+  margin-bottom: 0;
+}
+
+.compact-list {
+  gap: 0.95rem;
+}
+
+.workflow-card {
+  padding: 1.2rem;
+  border-radius: 24px;
+  background: rgba(246, 249, 250, 0.92);
+  border: 1px solid rgba(17, 32, 39, 0.07);
+  display: grid;
+  gap: 0.95rem;
+}
+
+.workflow-card--soft {
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.workflow-card__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.workflow-card__top h3 {
+  margin: 0.45rem 0 0;
+  font-size: 1.2rem;
+}
+
+.workflow-card__top strong {
+  white-space: nowrap;
+  font-size: 1rem;
+}
+
+.workflow-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+}
+
+.workflow-card__meta span {
+  padding: 0.7rem 0.8rem;
+  border-radius: 16px;
+  background: rgba(239, 244, 246, 0.95);
+  border: 1px solid rgba(17, 32, 39, 0.05);
+  color: #4e6169;
+  font-size: 0.92rem;
+}
+
+.workflow-card__meta--grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.empty-panel {
+  padding: 1.35rem;
+  border-radius: 22px;
+  background: rgba(245, 248, 249, 0.86);
+  border: 1px dashed rgba(17, 32, 39, 0.12);
+}
+
+.empty-panel strong {
+  display: block;
+  margin-bottom: 0.35rem;
+}
+
+@media (max-width: 980px) {
+  .control-room-header,
+  .control-room-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .control-room-sidebar {
+    position: static;
+  }
+}
+
+@media (max-width: 720px) {
+  .control-room-header,
+  .section-panel,
+  .control-room-header__intro {
+    padding: 1.25rem;
+  }
+
+  .control-room-metrics,
+  .workflow-card__meta--grid {
+    grid-template-columns: 1fr;
+  }
+
+  .section-panel__header,
+  .workflow-card__top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
