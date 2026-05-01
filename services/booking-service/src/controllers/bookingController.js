@@ -67,6 +67,7 @@ const createBooking = async (req, res) => {
 
   const booking = await Booking.create({
     userId: req.user.id,
+    customerName: req.user.name || req.user.email || req.user.id,
     organizerId: event.organizerId,
     eventId,
     eventTitle: event.title,
