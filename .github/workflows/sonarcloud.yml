@@ -11,6 +11,19 @@ on:
 jobs:
   sonarcloud:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: auth-service
+            project_settings: sonar/auth-service.properties
+          - name: event-service
+            project_settings: sonar/event-service.properties
+          - name: booking-service
+            project_settings: sonar/booking-service.properties
+          - name: notification-service
+            project_settings: sonar/notification-service.properties
+    name: SonarCloud / ${{ matrix.name }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -54,6 +67,9 @@ jobs:
 
       - name: SonarCloud scan
         uses: SonarSource/sonarqube-scan-action@v6
+        with:
+          args: >-
+            -Dproject.settings=${{ matrix.project_settings }}
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: https://sonarcloud.io
