@@ -47,7 +47,7 @@ const LoginPage = () => {
         <form onSubmit={handleSubmit} className="stack">
           <input placeholder="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
           <input placeholder="Password" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
-          <button type="submit" disabled={loading}>{loading ? 'Logging in...' : 'Login'}</button>
+          <button type="submit" disabled={loading}>{loading ? 'Logging in...' : 'Register'}</button>
         </form>
         <p className="auth-switch">No account yet? <Link to="/register">Create one here</Link></p>
       </section>
